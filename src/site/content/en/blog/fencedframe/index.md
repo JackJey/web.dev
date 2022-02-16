@@ -31,11 +31,11 @@ While browsing the web, you’ve probably seen products you were looking at on o
 
 This is achieved primarily through tracking technology that uses third-party cookies to share information across sites, technology which [Chrome has committed to phase out](https://blog.google/products/chrome/updated-timeline-privacy-sandbox-milestones/).
 
-Currently, Chrome teams are working on [Storage Partitioning](https://github.com/privacycg/storage-partitioning). Storage Partitioning separates browser storage on a per-site basis, so it can be applied to various storage APIs including LocalStorage, IndexedDB, and cookies. In a partitioned world, information leakage across first-party storage won’t be possible, and many tracking related problems will be solved.
+Currently, Chrome teams are working on [Storage Partitioning](https://github.com/privacycg/storage-partitioning). Storage Partitioning separates browser storage on a per-site basis, and it will be applied to the storage APIs including LocalStorage, IndexedDB, and cookies. In a partitioned world, information leakage across first-party storage won’t be possible, and many tracking related problems will be solved.
 
 ## What does Privacy Sandbox cover ?
 
-Privacy Sandbox is a series of proposals to satisfy cross-site use cases without third-party cookies or other tracking mechanisms. Examples include: [FLEDGE](https://developer.chrome.com/docs/privacy-sandbox/fledge/) which allows for interest-based ad serving in a privacy-preserving manner, [FedCM](https://github.com/fedidcg/FedCM) for secure Single Sign On, and [others](https://developer.chrome.com/docs/privacy-sandbox/overview/). Privacy Sandbox can be viewed as a series of API proposals, some are allowing access to unpartitioned storage in a privacy-preserving way, and others are finding a way to satisfy specific use-cases without exposing first-party storage. Fenced frame is one of former works.
+The Privacy Sandbox initiative is both partitioning data by top-frame site as well as creating a series of proposals to satisfy cross-site use cases without third-party cookies or other tracking mechanisms. Examples include: [FLEDGE](https://developer.chrome.com/docs/privacy-sandbox/fledge/) which allows for interest-based ad serving in a privacy-preserving manner, [FedCM](https://github.com/fedidcg/FedCM) for secure Single Sign On, and [others](https://developer.chrome.com/docs/privacy-sandbox/overview/). Some Privacy Sandbox API proposals allow access to unpartitioned storage in a privacy-preserving way, while others satisfy specific use-cases without exposing first-party storage. Fenced frame is one of former works.
 
 For example, let's take a look at the [FLEDGE](https://developer.chrome.com/docs/privacy-sandbox/fledge/) proposal.
 With FLEDGE, a user's interests are registered on an advertiser's site in [interest groups](https://developer.chrome.com/docs/privacy-sandbox/fledge/#interest-group-detail), along with ads that may be of interest to the user. Then, on a publisher's site, the ads registered in an interest group are auctioned and the winning ads are displayed.
@@ -48,15 +48,15 @@ This use case, among others, is why we’ve proposed fenced frames.
 
 A fenced frame can fetch the results of the FLEDGE API ad auction and display the winning ad. The information retrieved from FLEDGE API isn’t the URL of the ads itself, but an [opaque source](https://github.com/shivanigithub/fenced-frame/blob/master/OpaqueSrc.md) (this specific proposal is a work in-progress, but the concept remains the same). This allows your site to display the ads without showing the URL to the publisher.
 
-It's not enough to just be able to display ads. If the ad can postMessage to the publisher's site, like in an iframe, it can leak the content of the displayed ad. So unlike iframes, fenced frames don’t allow the [Messaging API](https://developer.mozilla.org/docs/Web/API/Window/postMessage). The publisher does not have access to the DOM inside of a fenced frame. Also, access to the attributes such as the `name` which can be set any value to and observed by the publisher are restricted.
+It's not enough to just be able to display ads. If the ad can postMessage to the publisher's site, like in an iframe, it can leak the content of the displayed ad. So unlike iframes, fenced frames don’t allow the [Messaging API](https://developer.mozilla.org/docs/Web/API/Window/postMessage). The Fenced Frame is isolated from the publisher page in other ways as well. For instance the publisher does not have access to the DOM inside of a fenced frame. Also, access to the attributes such as the `name` which can be set any value to and observed by the publisher are restricted.
 
-In other words, fenced frames won’t replace iframes. Fenced frames prevent other APIs, which are allowed to access unpartitioned data, from leaking out more than necessary in a partitioned world.
+In other words, fenced frames won’t replace iframes, instead they’re a more private frame that is used when data from different top-frame partitions needs to be displayed on the same page
 
 ## How will this API be used?
 
 Fenced frames are used in combination with another API from The Privacy Sandbox to access unpartitioned data that is discussed now and proposed in the future.
 
-Currently, the [TURTLEDOVE API](https://github.com/WICG/turtledove) family (which is the basis for FLEDGE), [Conversion Lift Measurement](https://github.com/w3c/web-advertising/blob/main/support_for_advertising_use_cases.md#conversion-lift-measurement), [Shared Storage](https://github.com/pythagoraskitty/shared-storage) and unpartitioned storage access are candidates. For more details, refer to the [Explainer](https://github.com/shivanigithub/fenced-frame#use-caseskey-scenarios).
+Currently, the [TURTLEDOVE API](https://github.com/WICG/turtledove) family (which is the basis for FLEDGE), [Conversion Lift Measurement](https://github.com/w3c/web-advertising/blob/main/support_for_advertising_use_cases.md#conversion-lift-measurement) via [Shared Storage](https://github.com/pythagoraskitty/shared-storage) and unpartitioned storage access are candidates. For more details, refer to the [Explainer](https://github.com/shivanigithub/fenced-frame#use-caseskey-scenarios).
 
 ### Example usage
 
@@ -66,7 +66,7 @@ Embedded content inside the `<fencedframe>` is described by the `src` attribute.
 <fencedframe src="demo_fenced_frame.html"></fencedframe>
 ```
 
-As mentioned, some APIs don’t allow the URL itself to be set in `src`, in which case an [Opaque Src](https://github.com/shivanigithub/fenced-frame/blob/master/OpaqueSrc.md) will be used.
+As mentioned, some APIs provide an Opaque URL, which look something like “urn:uuid:c36973b5-e5d9-de59-e4c4-364f137b3c7a”, and can be used as a fenced frame src.
 
 Also, a Fenced frame can't communicate with its parent element via the [Messaging API](https://developer.mozilla.org/docs/Web/API/Window/postMessage). However, it can use the Messaging API with iframes that are children of the Fenced frames. This makes the Fenced frames behave like a [top-level browsing context](https://html.spec.whatwg.org/multipage/browsers.html#top-level-browsing-context) (such as a browser tab).
 
@@ -92,7 +92,7 @@ From Chrome 97, [use Chrome flags](https://www.chromium.org/developers/how-tos/r
 
 There are multiple choices in the dialog. In most cases, you should select **Enable**.
 
-The other options, **Enabled with ShadowDOM** and **Enabled with multiple page architecture**, offer other implementation strategies. For now, **Enable** works in the same way as **Enabled with ShadowDOM**. In the future, the ShadowDOM option will map to **Enable with multiple page architecture**.
+The other options, **Enabled with ShadowDOM** and **Enabled with multiple page architecture**, offer different implementation strategies which are only relevant to browser engineers. For now, **Enable** works in the same way as **Enabled with ShadowDOM**. In the future, the ShadowDOM option will map to **Enable with multiple page architecture**.
 
 ### Feature detection
 
